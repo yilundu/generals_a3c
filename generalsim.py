@@ -82,7 +82,8 @@ class GeneralSim(object):
                 for i, stars in enumerate(self.stars):
                     if stars >= thresh_stars:
                         self.log_players[i] = True
-                        # We store the data of each player in two different dictionaries
+                        # We store the data of each player in two different
+                        # dictionaries
                         self.player_datasets[i] = ([], [], [])
 
         status = True if self.log_players else False
@@ -120,7 +121,7 @@ class GeneralSim(object):
                 state = self.export_state(index)
                 # The output of our model with be a plane of 3 convolutional
                 # outputs, where the first indicates the originating unit and
-                # the other indicating target destination and whether it is a 
+                # the other indicating target destination and whether it is a
                 # half or full output respectively.
                 train_end = end
                 if move['is50']:
@@ -162,9 +163,9 @@ class GeneralSim(object):
                                                       len(self.taken_cities),
                                                       end).astype('int')
 
-        is_end = False if self.moves_index < len(self.moves) and self.turn_num < 1000 else True
+        is_end = False if self.moves_index < len(
+            self.moves) and self.turn_num < 1000 else True
         return is_end
-
 
     def export_state(self, index):
         """Given the index of specific user, exports the view of the board,
@@ -286,6 +287,3 @@ if __name__ == "__main__":
     example_game.add_log(10, 7)
     for _ in range(400):
         example_game.step()
-
-
-

@@ -52,7 +52,14 @@ if __name__ == "__main__":
     STAR_TRESH = args.stars
 
     cprint("Finding all gioreplay files...", "green")
-    f_list = [join(args.data, f) for f in listdir(args.data) if isfile(join(args.data, f))]
+    f_list = [
+        join(
+            args.data,
+            f) for f in listdir(
+            args.data) if isfile(
+                join(
+                    args.data,
+                    f))]
 
     cprint("Extracting data from all gioreplay files...", "green")
     x, y, z = extract_data(f_list, args.threads)
@@ -60,6 +67,3 @@ if __name__ == "__main__":
     pickle.dump(x, open("data_x.p", "wb"))
     pickle.dump(y, open("data_y.p", "wb"))
     pickle.dump(z, open("data_z.p", "wb"))
-
-
-
