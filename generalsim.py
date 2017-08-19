@@ -10,7 +10,10 @@ class GeneralSim(object):
         self.map_width = replay['mapWidth']
         self.map_height = replay.get('mapHeight', self.map_width)
         self.stars = replay['stars']
-        self.num_players = len(self.stars)
+
+        if self.stars:
+            self.num_players = len(self.stars)
+
         self.moves = replay['moves']
         self.version = replay['version']
         # moves_index represents index of next move that will happen
@@ -57,18 +60,24 @@ class GeneralSim(object):
 
     def step(self):
         self.turn_num += 1
-        self.move_steps()
+        is_end = self.move_steps()
         self.increment_count()
         self.afk_remove()
 
+        return is_end
+
     def add_log(self, thresh_stars, players, **kwargs):
         """Specifies minimum condition for which we log data for players"""
-        if len(self.stars) == players:
-            for i, stars in enumerate(self.stars):
-                if stars >= thresh_stars:
-                    self.log_players[i] = True
-                    # We store the data of each player in two different dictionaries
-                    self.player_datasets[i] = ([], [])
+        if self.stars:
+            if len(self.stars) == players:
+                for i, stars in enumerate(self.stars):
+                    if stars >= thresh_stars:
+                        self.log_players[i] = True
+                        # We store the data of each player in two different dictionaries
+                        self.player_datasets[i] = ([], [])
+
+        status = True if self.log_players else False
+        return status
 
     def afk_remove(self):
         while self.afks_index < len(self.afks) and \
@@ -144,6 +153,10 @@ class GeneralSim(object):
                         self.taken_cities = np.insert(self.taken_cities,
                                                       len(self.taken_cities),
                                                       end).astype('int')
+
+        is_end = False if self.moves_index < len(self.moves) else True
+        return is_end
+
 
     def export_state(self, index):
         """Given the index of specific user, exports the view of the board,
@@ -244,7 +257,7 @@ class GeneralSim(object):
 
     def export_log(self):
         x, y = [], []
-        for index, value in self.player_datasets:
+        for index, value in self.player_datasets.iteritems():
             x.append(np.array(value[0]))
             y.append(np.array(value[1]))
         return x, y
