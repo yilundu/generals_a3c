@@ -23,6 +23,10 @@ class GeneralSim(object):
         # Initializes starting tiles of players
         self.init_board()
 
+        # Internal state to control what players we should log
+        self.log_players = {}
+        self.player_datasets = {}
+
     def init_board(self):
         self.turn_num = 0
         self.generals = np.array(self.replay['generals'])
@@ -57,6 +61,15 @@ class GeneralSim(object):
         self.increment_count()
         self.afk_remove()
 
+    def add_log(self, thresh_stars, players, **kwargs):
+        """Specifies minimum condition for which we log data for players"""
+        if len(self.stars) == players:
+            for i, stars in enumerate(self.stars):
+                if stars >= thresh_stars:
+                    self.log_players[i] = True
+                    # We store the data of each player in two different dictionaries
+                    self.player_datasets[i] = ([], [])
+
     def afk_remove(self):
         while self.afks_index < len(self.afks) and \
                 self.afks[self.afks_index]['turn'] < self.turn_num:
@@ -78,14 +91,33 @@ class GeneralSim(object):
 
             start = move['start']
             end = move['end']
+            start_label = self.label_map.flat[start]
+            end_label = self.label_map.flat[end]
+
+            index = start_label - 1
+            if (index) in self.log_players:
+                state = self.export_state(index)
+                label = np.zeros((3, self.map_height, self.map_width))
+
+                # The output of our model with be a plane of 3 convolutional
+                # outputs, where the first indicates the originating unit and
+                # the other indicating target destination and whether it is a 
+                # half or full output respectively.
+                label[0].flat[start] = 1
+                if move['is50']:
+                    label[1].flat[end] = 1
+                else:
+                    label[2].flat[end] = 1
+
+                self.player_datasets[index][0].append(state)
+                self.player_datasets[index][1].append(label)
+
 
             reserve = math.ceil(self.army_map.flat[start] / 2.) \
                 if move['is50'] else 1
             attack_force = self.army_map.flat[start] - reserve
             self.army_map.flat[start] = reserve
 
-            start_label = self.label_map.flat[start]
-            end_label = self.label_map.flat[end]
             end_army_value = self.army_map.flat[end]
 
             if start_label == end_label:
@@ -210,6 +242,13 @@ class GeneralSim(object):
         if self.turn_num % 50 == 49:
             self.army_map[self.label_map > 0] += 1
 
+    def export_log(self):
+        x, y = [], []
+        for index, value in self.player_datasets:
+            x.append(np.array(value[0]))
+            y.append(np.array(value[1]))
+        return x, y
+
     def __str__(self):
         output_text = ""
         output_text += "Printing the label_map... \n"
@@ -222,9 +261,9 @@ class GeneralSim(object):
 
 if __name__ == "__main__":
     example_game = GeneralSim("rFUuZ8evl.gioreplay")
+    example_game.add_log(10, 7)
     for _ in range(400):
         example_game.step()
 
-    example_game.export_state(5)
 
-    print(example_game)
+
