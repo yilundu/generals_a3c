@@ -5,6 +5,7 @@ from generalsim import GeneralSim
 
 from os import listdir
 from os.path import isfile, join
+import pickle
 
 REPORT_INTERVAL = 10000
 # Currently only extracting games between 2 players
@@ -14,7 +15,7 @@ STAR_TRESH = 80
 
 
 def extract_game(f_name):
-    game_x, game_y = [], []
+    game_x, game_y, game_z = [], [], []
     if f_name.endswith(".gioreplay"):
         game = GeneralSim(f_name)
         status = game.add_log(STAR_TRESH, NUM_PLAYERS)
@@ -23,9 +24,9 @@ def extract_game(f_name):
             while not game.step():
                 pass
 
-            game_x, game_y = game.export_log()
+            game_x, game_y, game_z = game.export_log()
 
-    return True
+    return game_x, game_y, game_z
 
 
 def extract_data(l_f, threads):
@@ -33,9 +34,10 @@ def extract_data(l_f, threads):
     pool = Pool(threads)
 
     mapped_data = pool.map(extract_game, l_f)
-    x, y = zip(*mapped_data)
+    pickle.dump(mapped_data, open("mapped_data_output.p", "wb"))
+    x, y, z = zip(*mapped_data)
 
-    return x, y
+    return x, y, z
 
 
 if __name__ == "__main__":
@@ -53,6 +55,11 @@ if __name__ == "__main__":
     f_list = [join(args.data, f) for f in listdir(args.data) if isfile(join(args.data, f))]
 
     cprint("Extracting data from all gioreplay files...", "green")
-    x, y = extract_data(f_list, args.threads)
+    x, y, z = extract_data(f_list, args.threads)
+
+    pickle.dump(x, open("data_x.p", "wb"))
+    pickle.dump(y, open("data_y.p", "wb"))
+    pickle.dump(z, open("data_z.p", "wb"))
+
 
 

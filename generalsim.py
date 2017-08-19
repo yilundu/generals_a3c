@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import math
+import traceback
 
 
 class GeneralSim(object):
@@ -24,7 +25,11 @@ class GeneralSim(object):
         self.afks_count = {}
 
         # Initializes starting tiles of players
-        self.init_board()
+        try:
+            self.init_board()
+        except Exception:
+            traceback.print_exc()
+            raise
 
         # Internal state to control what players we should log
         self.log_players = {}
@@ -59,10 +64,14 @@ class GeneralSim(object):
                                    coord in enumerate(self.generals)}
 
     def step(self):
-        self.turn_num += 1
-        is_end = self.move_steps()
-        self.increment_count()
-        self.afk_remove()
+        try:
+            self.turn_num += 1
+            is_end = self.move_steps()
+            self.increment_count()
+            self.afk_remove()
+        except Exception:
+            traceback.print_exc()
+            raise
 
         return is_end
 
@@ -74,7 +83,7 @@ class GeneralSim(object):
                     if stars >= thresh_stars:
                         self.log_players[i] = True
                         # We store the data of each player in two different dictionaries
-                        self.player_datasets[i] = ([], [])
+                        self.player_datasets[i] = ([], [], [])
 
         status = True if self.log_players else False
         return status
@@ -101,26 +110,25 @@ class GeneralSim(object):
             start = move['start']
             end = move['end']
             start_label = self.label_map.flat[start]
-            end_label = self.label_map.flat[end]
+            if end < len(self.label_map.flat):
+                end_label = self.label_map.flat[end]
+            else:
+                continue
 
             index = start_label - 1
             if (index) in self.log_players:
                 state = self.export_state(index)
-                label = np.zeros((3, self.map_height, self.map_width))
-
                 # The output of our model with be a plane of 3 convolutional
                 # outputs, where the first indicates the originating unit and
                 # the other indicating target destination and whether it is a 
                 # half or full output respectively.
-                label[0].flat[start] = 1
+                train_end = end
                 if move['is50']:
-                    label[1].flat[end] = 1
-                else:
-                    label[2].flat[end] = 1
+                    train_end += len(self.label_map.flat)
 
                 self.player_datasets[index][0].append(state)
-                self.player_datasets[index][1].append(label)
-
+                self.player_datasets[index][1].append(start)
+                self.player_datasets[index][2].append(train_end)
 
             reserve = math.ceil(self.army_map.flat[start] / 2.) \
                 if move['is50'] else 1
@@ -154,7 +162,7 @@ class GeneralSim(object):
                                                       len(self.taken_cities),
                                                       end).astype('int')
 
-        is_end = False if self.moves_index < len(self.moves) else True
+        is_end = False if self.moves_index < len(self.moves) and self.turn_num < 1000 else True
         return is_end
 
 
@@ -238,7 +246,7 @@ class GeneralSim(object):
 
         num_troops = self.army_map[label_mask].sum()
         enem_num_troops = self.army_map[enemy_global_mask].sum()
-        export_state[10] = num_troops / 1. / enem_num_troops
+        export_state[10] = min(num_troops / 1. / enem_num_troops, 10.)
 
     def increment_count(self):
         # Every two turns each city increases the number units in capital
@@ -256,11 +264,12 @@ class GeneralSim(object):
             self.army_map[self.label_map > 0] += 1
 
     def export_log(self):
-        x, y = [], []
+        x, y, z = [], [], []
         for index, value in self.player_datasets.iteritems():
             x.append(np.array(value[0]))
             y.append(np.array(value[1]))
-        return x, y
+            z.append(np.array(value[2]))
+        return x, y, z
 
     def __str__(self):
         output_text = ""
