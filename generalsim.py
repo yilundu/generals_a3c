@@ -82,8 +82,7 @@ class GeneralSim(object):
                 for i, stars in enumerate(self.stars):
                     if stars >= thresh_stars:
                         self.log_players[i] = True
-                        # We store the data of each player in two different
-                        # dictionaries
+                        # We store the data of each player in two different dictionaries
                         self.player_datasets[i] = ([], [], [])
 
         status = True if self.log_players else False
@@ -163,9 +162,9 @@ class GeneralSim(object):
                                                       len(self.taken_cities),
                                                       end).astype('int')
 
-        is_end = False if self.moves_index < len(
-            self.moves) and self.turn_num < 1000 else True
+        is_end = False if self.moves_index < len(self.moves) and self.turn_num < 800 else True
         return is_end
+
 
     def export_state(self, index):
         """Given the index of specific user, exports the view of the board,
@@ -243,11 +242,13 @@ class GeneralSim(object):
                     export_state[8].flat[enem_city_mask] = self.army_map.flat[
                         enem_city_mask]
 
-        export_state[9] = (self.turn_num % 50)
+        export_state[9] = (self.turn_num % 50) / 50.0
 
         num_troops = self.army_map[label_mask].sum()
         enem_num_troops = self.army_map[enemy_global_mask].sum()
-        export_state[10] = min(num_troops / 1. / enem_num_troops, 10.)
+        export_state[10] = min(num_troops / 1. / enem_num_troops, 10.) / 10.
+
+        return export_state.astype(np.float16)
 
     def increment_count(self):
         # Every two turns each city increases the number units in capital
@@ -287,3 +288,6 @@ if __name__ == "__main__":
     example_game.add_log(10, 7)
     for _ in range(400):
         example_game.step()
+
+
+
