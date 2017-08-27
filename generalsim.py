@@ -181,7 +181,7 @@ class GeneralSim(object):
                 channel 5: coordinates with values of capital
                 channel 6: 1s where location is unobserved
                 channel 7: coordinates of cities owned by self
-                channel 8: coordinates owned by enemy player
+                channel 8: coordinates of cities owned by enemy player
                 channel 9: turn number % 50
                 channel 10: enemy soldier number relative to own"""
 
