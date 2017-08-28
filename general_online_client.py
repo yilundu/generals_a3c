@@ -17,6 +17,10 @@ username = "[Bot] asdfshqwen123"
 def gen_state(update):
     label_map = np.array(update['tile_grid'])
     army_map = np.array(update['army_grid'])
+
+    print(label_map)
+    print(army_map)
+
     armies = update['armies']
     cities = update['cities']
     # Model was trained on turns offset by 1
@@ -72,7 +76,7 @@ def gen_state(update):
     return state[np.newaxis, ...]
 
 
-def gen_move_prediction(pred_start, pred_end):
+def gen_move_pred_start(pred_start, pred_end):
     _, row, col = pred_start.shape
     start = pred_start.argmax()
     y1, x1 = start // col, start % col
@@ -97,6 +101,42 @@ def gen_move_prediction(pred_start, pred_end):
 
     return x1, y1, x2, y2, move_half
 
+def gen_move_max(pred_start, pred_end, label_map, index):
+    label_map = np.array(label_map)
+    max_prob = -1 * float('inf')
+    row = pred_start.shape[1]
+    col = pred_start.shape[2]
+
+    for y in range(row):
+        for x in range(col):
+            if label_map[y, x] != index:
+                continue
+
+            start_prob = pred_start[0, y, x]
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                x_new = x + dx
+                y_new = y + dy
+
+                if x_new < 0 or x_new >= col or y_new < 0 or y_new >= row:
+                    continue
+
+                if label_map[y_new, x_new] == generals.MOUNTAIN:
+                    continue
+
+                if pred_end[0][y_new][x_new] + start_prob > max_prob:
+                    move_half = False
+                    x1, y1 = x, y
+                    x2, y2 = x_new, y_new
+                    max_prob = pred_end[0][y_new][x_new] + start_prob
+
+                if pred_end[1][y_new][x_new]+ start_prob > max_prob:
+                    move_half = True
+                    x1, y1 = x, y
+                    x2, y2 = x_new, y_new
+                    max_prob = pred_end[1][y_new][x_new] + start_prob
+
+    return x1, y1, x2, y2, move_half
+
 
 # private game
 g = generals.Generals(user_id, username, 'private', 'viz0')
@@ -113,7 +153,7 @@ for update in g.get_updates():
     pred_s, pred_e = model.forward(Variable(torch.Tensor(state)))
     pred_s, pred_e = pred_s.data.numpy(), pred_e.data.numpy()
     pred_s, pred_e = pred_s.reshape((1, dims[0], dims[1])), pred_e.reshape((2, dims[0], dims[1]))
-    x1, y1, x2, y2, move_half = gen_move_prediction(pred_s, pred_e)
+    x1, y1, x2, y2, move_half = gen_move_max(pred_s, pred_e, update['tile_grid'], update['player_index'])
 
     g.move(y1, x1, y2, x2, move_half=move_half)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print("--- {} seconds --- in turn {}".format((time.time() - start_time), update['turn']))
