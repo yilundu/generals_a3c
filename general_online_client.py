@@ -5,21 +5,10 @@ import CNNLSTMPolicy
 import numpy as np
 import time
 
-model = CNNLSTMPolicy.CNNLSTMPolicy()
-model.load_state_dict(torch.load("2_epoch.mdl"))
-model = model.eval()
-init_state = False
-
-user_id = "5900688366"
-username = "[Bot] asdfshqwen123"
-
 
 def gen_state(update):
     label_map = np.array(update['tile_grid'])
     army_map = np.array(update['army_grid'])
-
-    print(label_map)
-    print(army_map)
 
     armies = update['armies']
     cities = update['cities']
@@ -59,7 +48,7 @@ def gen_state(update):
     state[4][mountain_mask] = 1
     state[6][unob_mask] = 1
     state[9] = turn_num / 50.
-    state[10] = min(armies[0] / 1. / armies[1], 10.) / 10.
+    state[10] = min(armies[index] / 1. / min(armies[op_index], 1), 10.) / 10.
 
     for city in cities:
         if label_mask[city] == op_index:
@@ -101,15 +90,18 @@ def gen_move_pred_start(pred_start, pred_end):
 
     return x1, y1, x2, y2, move_half
 
-def gen_move_max(pred_start, pred_end, label_map, index):
+def gen_move_max(pred_start, pred_end, label_map, army_map, index):
     label_map = np.array(label_map)
+    army_map = np.array(army_map)
     max_prob = -1 * float('inf')
     row = pred_start.shape[1]
     col = pred_start.shape[2]
 
+    x1, y1, x2, y2, move_half = 0, 0, 0, 0, False
+
     for y in range(row):
         for x in range(col):
-            if label_map[y, x] != index:
+            if label_map[y, x] != index or army_map[y, x] < 2:
                 continue
 
             start_prob = pred_start[0, y, x]
@@ -138,22 +130,36 @@ def gen_move_max(pred_start, pred_end, label_map, index):
     return x1, y1, x2, y2, move_half
 
 
-# private game
-g = generals.Generals(user_id, username, 'private', 'viz0')
+if __name__ == "__main__":
+    model = CNNLSTMPolicy.CNNLSTMPolicy()
+    model.load_state_dict(torch.load("2_epoch.mdl"))
+    model = model.eval()
+    init_state = False
 
-for update in g.get_updates():
-    start_time = time.time()
-    state = gen_state(update)
-    dims = state.shape[2], state.shape[3]
+    user_id = "5900688366"
+    username = "[Bot] asdfshqwen123"
 
-    if not init_state:
-        model.init_hidden(*dims)
-        init_state = True
+    # private game
+    g = generals.Generals(user_id, username, 'private', 'viz0')
 
-    pred_s, pred_e = model.forward(Variable(torch.Tensor(state)))
-    pred_s, pred_e = pred_s.data.numpy(), pred_e.data.numpy()
-    pred_s, pred_e = pred_s.reshape((1, dims[0], dims[1])), pred_e.reshape((2, dims[0], dims[1]))
-    x1, y1, x2, y2, move_half = gen_move_max(pred_s, pred_e, update['tile_grid'], update['player_index'])
+    for update in g.get_updates():
+        start_time = time.time()
+        state = gen_state(update)
+        dims = state.shape[2], state.shape[3]
 
-    g.move(y1, x1, y2, x2, move_half=move_half)
-    print("--- {} seconds --- in turn {}".format((time.time() - start_time), update['turn']))
+        if update['turn'] < 10:
+            continue
+
+        if not init_state:
+            model.init_hidden(*dims)
+            init_state = True
+
+        pred_s, pred_e = model.forward(Variable(torch.Tensor(state)))
+        pred_s, pred_e = pred_s.data.numpy(), pred_e.data.numpy()
+        pred_s, pred_e = pred_s.reshape((1, dims[0], dims[1])), pred_e.reshape((2, dims[0], dims[1]))
+        x1, y1, x2, y2, move_half = gen_move_max(pred_s, pred_e,
+                                                 update['tile_grid'], update['army_grid'],
+                                                 update['player_index'])
+
+        g.move(y1, x1, y2, x2, move_half=move_half)
+        print("--- {} seconds --- in turn {}".format((time.time() - start_time), update['turn']))

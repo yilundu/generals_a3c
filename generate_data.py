@@ -43,7 +43,7 @@ def extract_data(l_f, threads):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--threads", type=int, default=None)
-    parser.add_argument("--data", type=str, default="/home/yilundu/fbcode/experimental/yilundu/generals/generals_a3c/replays_prod",
+    parser.add_argument("--data", type=str, default="replays_prod",
                         help="Directory where the gioreplay files are stored")
     parser.add_argument("--stars", type=int, default=90)
     parser.add_argument("--players", type=int, default=2)
@@ -61,9 +61,9 @@ if __name__ == "__main__":
     y = list(filter(lambda y: True if y else False, y))
     z = list(filter(lambda z: True if z else False, z))
 
-    np.savez("/mnt/homedir/yilundu/data_x", x)
-    np.savez("/mnt/homedir/yilundu/data_y", y)
-    np.savez("/mnt/homedir/yilundu/data_z", z)
+    np.savez("data_x", x)
+    np.savez("data_y", y)
+    np.savez("data_z", z)
 
 
 
