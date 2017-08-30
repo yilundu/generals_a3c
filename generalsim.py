@@ -29,19 +29,12 @@ class GeneralBase(object):
         end = move['end']
         reward = 0
 
+        if not self.is_valid_move(start, end, player_index):
+            return reward
+
         start_label = self.label_map.flat[start]
-        if end < len(self.label_map.flat):
-            end_label = self.label_map.flat[end]
-        else:
-            return reward
-
+        end_label = self.label_map.flat[end]
         index = start_label - 1
-
-        if player_index != None and (player_index != index):
-            return reward
-
-        if self.army_map.flat[start] == 0:
-            return reward
 
         if (index) in self.log_players:
             state = self.export_state(index)
@@ -95,13 +88,37 @@ class GeneralBase(object):
                     reward += end_army_value + 1
         return reward
 
+    def is_valid_move(self, start, end, player_index):
+        start_label = self.label_map.flat[start]
+
+        if end < len(self.label_map.flat) and end >= 0:
+            end_label = self.label_map.flat[end]
+        else:
+            return False
+
+        index = start_label - 1
+
+        if player_index != None and (player_index != index):
+            return False
+
+        if self.army_map.flat[start] == 0:
+            return False
+
+        start_x, start_y = np.unravel_index(start, (self.map_height, self.map_width))
+        end_x, end_y = np.unravel_index(end, (self.map_height, self.map_width))
+
+        if abs(start_x - end_x) + abs(start_y - end_y) != 1:
+            return False
+
+        return True
+
+
     def compute_stats(self, index):
         """Returns the army_num, land_num of index respectively"""
         index_map = (self.label_map == index + 1)
         army_num = self.army_map[index_map].sum()
         land_num = index_map.sum()
         return army_num, land_num
-
 
     def export_state(self, index):
         """Given the index of specific user, exports the view of the board,

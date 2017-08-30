@@ -108,6 +108,11 @@ class GeneralEnvironment(GeneralBase):
         self.player_land_num = 0
         self.player_army_num = 0
 
+        # Keep a map of the index generals to there original start locations
+        self.gen_index_to_coord = {i: coord for i,
+                                   coord in enumerate(self.generals)}
+        self.taken_cities = np.array([])
+
     def model_move(self):
         state = self.export_state(1)
         state = state[np.newaxis, ...]
@@ -122,15 +127,17 @@ class GeneralEnvironment(GeneralBase):
         move = {"start": start, "end": end, "is50": move_half}
         return move
 
-    def step(self, move):
+    def step(self, action):
         """
         Roughly follows the API of OpenAI gym
 
         Keyword Arguments:
-            move: dictionary with parameters start, end, is50
+            a flat index of 8 x w x h array indicating
+            movement direction
         Returns:
             observation, reward, done, info
         """
+        move = self._parse_action(action)
         self.turn_num += 1
         reward = self.move(move, player_index=0)
         self.move(self.model_move(), player_index=1)
@@ -145,6 +152,31 @@ class GeneralEnvironment(GeneralBase):
         self.player_land_num = land_num
 
         return state, reward, done, {}
+
+    def reset(self):
+        self.init_board()
+        return self.export_state(0)
+
+    def _parse_action(self, action):
+        move_type, y, x = np.unravel_index(action, (8, self.map_height, self.map_width))
+        start = y * self.map_width + x
+        index = move_type % 4
+
+        if index == 0:
+            end = start + self.map_width
+        elif index == 1:
+            end = start + 1
+        elif index == 2:
+            end = start - self.map_width
+        elif index == 3:
+            end = start - 1
+        else:
+            raise("invalid index")
+
+        is_50 = True if index >= 4 else False
+
+        return {'start': start, 'end': end, 'is50': is_50}
+
 
 
 if __name__ == "__main__":
