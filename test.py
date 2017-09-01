@@ -41,7 +41,7 @@ def test(rank, args, shared_model):
 
         state, reward, done, _ = env.step(action[0, 0])
         done = done or episode_length >= args.max_episode_length
-        reward_sum += reward
+        reward_sum += reward - 0.5
 
         # a quick hack to prevent the agent from stucking
         actions.append(action[0, 0])

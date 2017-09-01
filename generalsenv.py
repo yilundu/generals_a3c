@@ -184,4 +184,8 @@ if __name__ == "__main__":
     for i in range(20):
         _, reward, _, _ = general_env.step({'start': 0, 'end': 1, 'is50': False})
         print(reward)
+    general_env.reset()
+    for i in range(20):
+        _, reward, _, _ = general_env.step({'start': 0, 'end': 1, 'is50': False})
+        print(reward)
     print(general_env)

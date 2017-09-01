@@ -2,9 +2,12 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+import numpy as np
 
 from generalsenv import GeneralEnvironment
 from ActorCritic import ActorCritic
+
+import gc
 
 
 def ensure_shared_grads(model, shared_model):
@@ -55,7 +58,11 @@ def train(rank, args, shared_model, optimizer=None):
 
             state, reward, done, _ = env.step(action.numpy())
             done = done or episode_length >= args.max_episode_length
-            reward = max(min(reward, 1), -1)
+            reward = reward - 0.5
+
+            if type(reward) is np.darray:
+                print(reward)
+                assert False
 
             if done:
                 print("Finished")
@@ -104,3 +111,4 @@ def train(rank, args, shared_model, optimizer=None):
         ensure_shared_grads(model, shared_model)
         optimizer.step()
         model.reset_hidden()
+        gc.collect()

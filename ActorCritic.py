@@ -13,7 +13,7 @@ class ActorCritic(nn.Module):
         # This architecture if fully convolutional with no max pooling
         super(ActorCritic, self).__init__()
         self.lstm_layer = 3
-        self.hidden_dim = 200
+        self.hidden_dim = 150
         self.on_gpu = on_gpu
 
         self.conv1 = nn.Conv2d(11, self.hidden_dim, 5, padding=2)

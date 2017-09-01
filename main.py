@@ -5,7 +5,6 @@ import torch
 import torch.multiprocessing as mp
 
 import my_optim
-
 from generalsenv import GeneralEnvironment
 from ActorCritic import ActorCritic
 from test import test
@@ -29,11 +28,11 @@ parser.add_argument('--max-grad-norm', type=float, default=1,
                     help='value loss coefficient (default: 50)')
 parser.add_argument('--seed', type=int, default=1,
                     help='random seed (default: 1)')
-parser.add_argument('--num-processes', type=int, default=6,
+parser.add_argument('--num-processes', type=int, default=10,
                     help='how many training processes to use (default: 4)')
-parser.add_argument('--num-steps', type=int, default=20,
+parser.add_argument('--num-steps', type=int, default=40,
                     help='number of forward steps in A3C (default: 20)')
-parser.add_argument('--max-episode-length', type=int, default=500,
+parser.add_argument('--max-episode-length', type=int, default=400,
                     help='maximum length of an episode (default: 1000')
 parser.add_argument('--no-shared', default=False,
                     help='use an optimizer without shared momentum.')
