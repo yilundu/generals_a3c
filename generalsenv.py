@@ -145,7 +145,8 @@ class GeneralEnvironment(GeneralBase):
 
         army_num, land_num = self.compute_stats(0)
         reward += (army_num - self.player_army_num) + (land_num - self.player_land_num)
-        done = army_num == 0
+        # print("This is the land difference: {}".format(land_num - self.player_land_num))
+        done = (army_num == 0)
         state = self.export_state(0)
 
         self.player_army_num = army_num

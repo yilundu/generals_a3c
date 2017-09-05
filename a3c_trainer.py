@@ -49,6 +49,18 @@ def train(rank, args, shared_model, optimizer=None):
             episode_length += 1
             value, logit = model(Variable(state.unsqueeze(0)))
             prob = F.softmax(logit)
+
+            # Set the probability of all items that not owned by user to 
+            # 0
+            army_map = state[0, ...]
+            label_map = (army_map > 0)
+            label_map = label_map.view(1, env.map_height, env.map_width)
+            label_map = label_map.expand(8, env.map_height, env.map_width)
+            label_map = label_map.contiguous()
+            label_map = label_map.view(-1)
+            # prob[~label_map] = 0
+            prob = prob * Variable(label_map.float())
+
             log_prob = F.log_softmax(logit)
             entropy = -(log_prob * prob).sum(1)
             entropies.append(entropy)
@@ -58,11 +70,12 @@ def train(rank, args, shared_model, optimizer=None):
 
             state, reward, done, _ = env.step(action.numpy())
             done = done or episode_length >= args.max_episode_length
-            reward = reward - 0.5
 
-            if type(reward) is np.darray:
+            if type(reward) is np.ndarray:
                 print(reward)
-                assert False
+                reward = reward.flat[0]
+
+            reward -= 0.5
 
             if done:
                 print("Finished")

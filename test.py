@@ -37,11 +37,22 @@ def test(rank, args, shared_model):
         value, logit = model(Variable(
             state.unsqueeze(0), volatile=True))
         prob = F.softmax(logit)
+
+        # Set the probability of all items that not owned by user to 
+        # 0
+        army_map = state[0, ...]
+        label_map = (army_map > 0)
+        label_map = label_map.view(1, env.map_height, env.map_width)
+        label_map = label_map.expand(8, env.map_height, env.map_width)
+        label_map = label_map.contiguous()
+        label_map = label_map.view(-1)
+        prob = prob * Variable(label_map.float())
+
         action = prob.max(1, keepdim=True)[1].data.numpy()
 
         state, reward, done, _ = env.step(action[0, 0])
         done = done or episode_length >= args.max_episode_length
-        reward_sum += reward - 0.5
+        reward_sum += reward
 
         # a quick hack to prevent the agent from stucking
         actions.append(action[0, 0])
