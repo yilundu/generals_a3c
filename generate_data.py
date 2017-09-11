@@ -1,6 +1,5 @@
 import argparse
 from multiprocessing import Pool
-from termcolor import cprint
 import generalsim
 
 from os import listdir
@@ -44,19 +43,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--processes", type=int, default=None)
     parser.add_argument("--data", type=str, default="replays_prod",
-                        help="Directory where the gioreplay files are stored")
+                        help="directory where the gioreplay files are stored")
     parser.add_argument("--stars", type=int, default=90,
-                        help="Threshold for stars to parse games from")
+                        help="threshold for stars to parse games from")
     parser.add_argument("--players", type=int, default=2,
-                        help="Number of players need so that we parse game from")
+                        help="number of players needed so that we parse games")
     args = parser.parse_args()
     NUM_PLAYERS = args.players
     STAR_TRESH = args.stars
 
-    cprint("Finding all gioreplay files...", "green")
+    print("Finding all gioreplay files...")
     f_list = [join(args.data, f) for f in listdir(args.data) if isfile(join(args.data, f))]
 
-    cprint("Extracting data from all gioreplay files...", "green")
+    print("Extracting data from all gioreplay files...")
     x, y, z = extract_data(f_list, args.processes)
 
     x = list(filter(lambda x: True if x else False, x))
@@ -66,6 +65,3 @@ if __name__ == "__main__":
     np.savez("data_x", x)
     np.savez("data_y", y)
     np.savez("data_z", z)
-
-
-

@@ -38,7 +38,7 @@ parser.add_argument('--no-shared', default=True,
                     help='use an optimizer without shared momentum.')
 parser.add_argument('--off-tile-coef', type=float, default=10,
                    help='weight to penalize bad movement')
-parser.add_agrument('--checkpoint-interval', type=float, default=None,
+parser.add_argument('--checkpoint-interval', type=float, default=None,
                    help='interval to save model')
 
 

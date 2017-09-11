@@ -106,19 +106,21 @@ def gen_valid_move(move_index, label_map, army_map, dims):
 
 
 if __name__ == "__main__":
-    model = ActorCritic.ActorCritic()
-    model.load_state_dict(torch.load("reinforce.mdl"))
-    model = model.eval()
-    init_state = False
-
-    parser = argparse.ArgumentParser(description='Policy Bot Player')
+    parser = argparse.ArgumentParser(description='Reinforcement Trained Bot Player')
     parser.add_argument('--user_id', type=str, default="5900688366",
                         help='user_id for bot')
     parser.add_argument('--username', type=str, default="[Bot] asdfshqwen123",
                         help='username for bot')
     parser.add_argument('--game_id', type=str, default="viz0",
                         help='id for the game')
+    parser.add_argument('--model_path', type=str, default="reinforce.mdl",
+                        help='path of a3c trained model')
     args = parser.parse_args()
+
+    model = ActorCritic.ActorCritic()
+    model.load_state_dict(torch.load(args.model_path))
+    model = model.eval()
+    init_state = False
 
     # private game
     g = generals.Generals(args.user_id, args.username, 'private', args.game_id)

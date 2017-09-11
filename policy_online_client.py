@@ -91,6 +91,7 @@ def gen_move_pred_start(pred_start, pred_end):
 
     return x1, y1, x2, y2, move_half
 
+
 def gen_move_max(pred_start, pred_end, label_map, army_map, index):
     label_map = np.array(label_map)
     army_map = np.array(army_map)
@@ -122,7 +123,7 @@ def gen_move_max(pred_start, pred_end, label_map, army_map, index):
                     x2, y2 = x_new, y_new
                     max_prob = pred_end[0][y_new][x_new] + start_prob
 
-                if pred_end[1][y_new][x_new]+ start_prob > max_prob:
+                if pred_end[1][y_new][x_new] + start_prob > max_prob:
                     move_half = True
                     x1, y1 = x, y
                     x2, y2 = x_new, y_new
@@ -132,11 +133,6 @@ def gen_move_max(pred_start, pred_end, label_map, army_map, index):
 
 
 if __name__ == "__main__":
-    model = CNNLSTMPolicy.CNNLSTMPolicy()
-    model.load_state_dict(torch.load("policy.mdl"))
-    model = model.eval()
-    init_state = False
-
     parser = argparse.ArgumentParser(description='Policy Bot Player')
     parser.add_argument('--user_id', type=str, default="5900688366",
                         help='user_id for bot')
@@ -144,7 +140,14 @@ if __name__ == "__main__":
                         help='username for bot')
     parser.add_argument('--game_id', type=str, default="viz0",
                         help='id for the game')
+    parser.add_argument('--model_path', type=str, default="policy.mdl",
+                        help='path of policy model')
     args = parser.parse_args()
+
+    model = CNNLSTMPolicy.CNNLSTMPolicy()
+    model.load_state_dict(torch.load(args.model_path))
+    model = model.eval()
+    init_state = False
 
     # private game
     g = generals.Generals(args.user_id, args.username, 'private', args.game_id)
@@ -163,9 +166,10 @@ if __name__ == "__main__":
 
         pred_s, pred_e = model.forward(Variable(torch.Tensor(state)))
         pred_s, pred_e = pred_s.data.numpy(), pred_e.data.numpy()
-        pred_s, pred_e = pred_s.reshape((1, dims[0], dims[1])), pred_e.reshape((2, dims[0], dims[1]))
-        x1, y1, x2, y2, move_half = gen_move_max(pred_s, pred_e,
-                                                 update['tile_grid'], update['army_grid'],
-                                                 update['player_index'])
+        pred_s, pred_e = pred_s.reshape(
+            (1, dims[0], dims[1])), pred_e.reshape(
+            (2, dims[0], dims[1]))
+        x1, y1, x2, y2, move_half = gen_move_max(
+            pred_s, pred_e, update['tile_grid'], update['army_grid'], update['player_index'])
 
         g.move(y1, x1, y2, x2, move_half=move_half)
