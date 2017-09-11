@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-import numpy as np
 
 from generalsenv import GeneralEnvironment
 from ActorCritic import ActorCritic
@@ -21,7 +20,7 @@ def ensure_shared_grads(model, shared_model):
 def train(rank, args, shared_model, optimizer=None):
     torch.manual_seed(args.seed + rank)
 
-    env = GeneralEnvironment('2_epoch.mdl')
+    env = GeneralEnvironment('policy.mdl')
 
     model = ActorCritic()
 
@@ -52,7 +51,7 @@ def train(rank, args, shared_model, optimizer=None):
             prob = F.softmax(logit)
             old_prob = prob
 
-            # Set the probability of all items that not owned by user to 
+            # Set the probability of all items that not owned by user to
             # 0
             army_map = state[0, ...]
             label_map = (army_map > 0)
@@ -77,7 +76,6 @@ def train(rank, args, shared_model, optimizer=None):
             done = done or episode_length >= args.max_episode_length
 
             if done:
-                print("Finished")
                 episode_length = 0
                 state = env.reset()
                 model.init_hidden(env.map_height, env.map_width)
@@ -112,13 +110,10 @@ def train(rank, args, shared_model, optimizer=None):
 
             policy_loss = policy_loss - \
                 log_probs[i] * Variable(gae) - args.entropy_coef * entropies[i] + \
-                10 * off_targets[i]
+                args.off_tile_coef * off_targets[i]
 
         optimizer.zero_grad()
         loss = policy_loss + args.value_loss_coef * value_loss
-        print(loss.data[0])
-        print(env.compute_stats(0))
-        print(R)
 
         (loss).backward()
         torch.nn.utils.clip_grad_norm(model.parameters(), args.max_grad_norm)

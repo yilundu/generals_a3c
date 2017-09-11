@@ -24,6 +24,7 @@ def test(rank, args, shared_model):
     done = True
 
     start_time = time.time()
+    checkpoint_interval = 1
 
     # a quick hack to prevent the agent from stucking
     actions = deque(maxlen=100)
@@ -70,7 +71,9 @@ def test(rank, args, shared_model):
             state = env.reset()
             model.init_hidden(env.map_height, env.map_width)
             time.sleep(60)
+            checkpoint_interval += 1
 
-            torch.save(model.cpu().state_dict(), 'reinforce_trained.mdl')
+            if checkpoint_interval % arg.checkpoint_interval == 0:
+                torch.save(model.cpu().state_dict(), 'reinforce_trained.mdl')
 
         state = torch.Tensor(state)

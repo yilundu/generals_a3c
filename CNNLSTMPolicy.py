@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+
 class MultiGPUTrain(nn.Module):
 
     def __init__(self, module, n_gpu):
@@ -25,7 +26,8 @@ class MultiGPUTrain(nn.Module):
         # inputs should be variables
         if self.n_gpu > 1:
             inputs = list(map(lambda x: (x,), inputs))
-            outputs = nn.parallel.parallel_apply(self.replicas, inputs, devices=self.device_ids)
+            outputs = nn.parallel.parallel_apply(
+                self.replicas, inputs, devices=self.device_ids)
         else:
             outputs = [self.replicas[0].forward(inputs[0])]
         return outputs
@@ -37,9 +39,9 @@ class MultiGPUTrain(nn.Module):
 
 class CNNLSTMPolicy(nn.Module):
 
-    def __init__(self, on_gpu = False):
+    def __init__(self, on_gpu=False):
         # Current architecture for policy is 3 5x5 convolutions
-        # followed by 2 LSTM layers followed by 2 5x5 convolutions
+        # followed by 3 LSTM layers followed by 2 5x5 convolutions
         # and a final 1x1 convolution
         # This architecture if fully convolutional with no max pooling
         super(CNNLSTMPolicy, self).__init__()
@@ -69,16 +71,22 @@ class CNNLSTMPolicy(nn.Module):
         self.width = width
         self.batch = height * width
 
-        self.cell_state = Variable(torch.zeros(self.lstm_layer, self.batch, self.hidden_dim))
-        self.hidden_state = Variable(torch.zeros(self.lstm_layer, self.batch, self.hidden_dim))
+        self.cell_state = Variable(
+            torch.zeros(
+                self.lstm_layer,
+                self.batch,
+                self.hidden_dim))
+        self.hidden_state = Variable(
+            torch.zeros(
+                self.lstm_layer,
+                self.batch,
+                self.hidden_dim))
 
         if self.on_gpu:
             self.cell_state = self.cell_state.cuda()
             self.hidden_state = self.hidden_state.cuda()
 
     def forward(self, input):
-        # TODO perhaps add batch normalization or layer normalization
-
         x = F.elu(self.conv1(input))
         x = F.elu(self.conv2(x))
         x = F.elu(self.conv3(x))

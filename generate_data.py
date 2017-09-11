@@ -42,11 +42,13 @@ def extract_data(l_f, threads):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--threads", type=int, default=None)
+    parser.add_argument("--processes", type=int, default=None)
     parser.add_argument("--data", type=str, default="replays_prod",
                         help="Directory where the gioreplay files are stored")
-    parser.add_argument("--stars", type=int, default=90)
-    parser.add_argument("--players", type=int, default=2)
+    parser.add_argument("--stars", type=int, default=90,
+                        help="Threshold for stars to parse games from")
+    parser.add_argument("--players", type=int, default=2,
+                        help="Number of players need so that we parse game from")
     args = parser.parse_args()
     NUM_PLAYERS = args.players
     STAR_TRESH = args.stars
@@ -55,7 +57,7 @@ if __name__ == "__main__":
     f_list = [join(args.data, f) for f in listdir(args.data) if isfile(join(args.data, f))]
 
     cprint("Extracting data from all gioreplay files...", "green")
-    x, y, z = extract_data(f_list, args.threads)
+    x, y, z = extract_data(f_list, args.processes)
 
     x = list(filter(lambda x: True if x else False, x))
     y = list(filter(lambda y: True if y else False, y))

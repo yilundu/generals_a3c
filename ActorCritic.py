@@ -6,9 +6,9 @@ from torch.autograd import Variable
 
 class ActorCritic(nn.Module):
 
-    def __init__(self, on_gpu = False):
+    def __init__(self, on_gpu=False):
         # Current architecture for policy is 3 5x5 convolutions
-        # followed by 2 LSTM layers followed by 2 5x5 convolutions
+        # followed by LSTM layers followed by 2 5x5 convolutions
         # and a final 1x1 convolution
         # This architecture if fully convolutional with no max pooling
         super(ActorCritic, self).__init__()
@@ -39,8 +39,16 @@ class ActorCritic(nn.Module):
         self.width = width
         self.batch = height * width
 
-        self.cell_state = Variable(torch.zeros(self.lstm_layer, self.batch, self.hidden_dim))
-        self.hidden_state = Variable(torch.zeros(self.lstm_layer, self.batch, self.hidden_dim))
+        self.cell_state = Variable(
+            torch.zeros(
+                self.lstm_layer,
+                self.batch,
+                self.hidden_dim))
+        self.hidden_state = Variable(
+            torch.zeros(
+                self.lstm_layer,
+                self.batch,
+                self.hidden_dim))
 
         if self.on_gpu:
             self.cell_state = self.cell_state.cuda()
@@ -48,8 +56,8 @@ class ActorCritic(nn.Module):
 
     def reset_hidden(self):
         # Zero gradients on hidden states
-        self.cell_state = Variable(self.cell_state.data)
-        self.hidden_state = Variable(self.hidden_state.data)
+        self.cell_state = self.cell_state.detach()
+        self.hidden_state = self.hidden_state.detach()
 
     def forward(self, input):
         x = F.elu(self.conv1(input))

@@ -334,6 +334,7 @@ class GeneralSim(GeneralBase):
         return is_end
 
 if __name__ == "__main__":
+    # Example to simulate a generals game
     example_game = GeneralSim("rFUuZ8evl.gioreplay")
     example_game.add_log(10, 7)
     for _ in range(400):

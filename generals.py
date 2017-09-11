@@ -75,7 +75,6 @@ class Generals(object):
         a = y1 * cols + x1
         b = y2 * cols + x2
         self._send(["attack", a, b, move_half, self._move_id])
-        print("move from {}, {} to {}, {}".format(x1, y1, x2, y2))
         self._move_id += 1
 
     def get_updates(self):
