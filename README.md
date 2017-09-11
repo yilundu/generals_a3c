@@ -33,6 +33,8 @@ optional arguments:
 
 ## Policy Bot Training 
 
+We can train a policy network to play the game of generals by training a bot to predict both start and end locations.
+
 To train policy network use the following code:
 ```
 usage: policy_trainer.py [-h] [--on-gpu ON_GPU] [--num-epochs NUM_EPOCHS]
@@ -76,7 +78,9 @@ and then go to the URL [here](http://bot.generals.io/games/viz0)
 
 ## A3C Bot Training 
 
-To train policy network use the following code:
+We an also train a generals.io bot using reinforcement learning. Specifically, we create a generals.io environment with a bundled policy bot. Our bot then interacts with this generals.io environment and receives rewards each time it takes a tile, city or general. 
+
+To train the A3C network use the following code:
 ```
 usage: main.py [-h] [--lr LR] [--gamma GAMMA] [--tau TAU]
                [--entropy-coef ENTROPY_COEF]
