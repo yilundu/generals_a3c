@@ -31,7 +31,7 @@ def gen_state(update):
             channel 7: coordinates of cities owned by self
             channel 8: coordinates of cities owned by enemy player
             channel 9: turn number % 50
-            channel 10: enemy soldier number relative to own"""
+            channel 10: own army number relative for enemy"""
 
     label_mask = label_map == index
     op_mask = label_map == op_index

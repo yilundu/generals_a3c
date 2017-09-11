@@ -7,7 +7,7 @@ import numpy as np
 ##### Environment settings
 MAP_MIN = 17
 MAP_MAX = 23
-MOUNTAIN_RATIO = 0.2
+MOUNTAIN_RATIO = 0.25
 CITY_NUM = 9
 CITY_MIN = 40
 CITY_MAX = 50
@@ -104,9 +104,9 @@ class GeneralEnvironment(GeneralBase):
 
         self.model.init_hidden(self.map_height, self.map_width)
 
-        self.turn_num = 0
-        self.player_land_num = 0
-        self.player_army_num = 0
+        self.turn_num = 1
+        self.player_land_num = 1
+        self.player_army_num = 1
 
         # Keep a map of the index generals to there original start locations
         self.gen_index_to_coord = {i: coord for i,
@@ -143,14 +143,12 @@ class GeneralEnvironment(GeneralBase):
         self.move(self.model_move(), player_index=1)
         self.increment_count()
 
-        army_num, land_num = self.compute_stats(0)
-        reward += (army_num - self.player_army_num) + (land_num - self.player_land_num)
-        # print("This is the land difference: {}".format(land_num - self.player_land_num))
-        done = (army_num == 0)
-        state = self.export_state(0)
+        army_num, _ = self.compute_stats(0)
+        enem_army_num, _ = self.compute_stats(1)
 
-        self.player_army_num = army_num
-        self.player_land_num = land_num
+        # print("This is the land difference: {}".format(land_num - self.player_land_num))
+        done = ((army_num == 0) or (enem_army_num == 0))
+        state = self.export_state(0)
 
         return state, reward, done, {}
 
@@ -174,7 +172,7 @@ class GeneralEnvironment(GeneralBase):
         else:
             raise("invalid index")
 
-        is_50 = True if index >= 4 else False
+        is_50 = True if move_type >= 4 else False
 
         return {'start': start, 'end': end, 'is50': is_50}
 

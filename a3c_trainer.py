@@ -44,11 +44,13 @@ def train(rank, args, shared_model, optimizer=None):
         log_probs = []
         rewards = []
         entropies = []
+        off_targets = []
 
         for step in range(args.num_steps):
             episode_length += 1
             value, logit = model(Variable(state.unsqueeze(0)))
             prob = F.softmax(logit)
+            old_prob = prob
 
             # Set the probability of all items that not owned by user to 
             # 0
@@ -59,7 +61,10 @@ def train(rank, args, shared_model, optimizer=None):
             label_map = label_map.contiguous()
             label_map = label_map.view(-1)
             # prob[~label_map] = 0
-            prob = prob * Variable(label_map.float())
+            prob = old_prob * Variable(label_map.float())
+            # Penalize model for predicting off target tiles
+            off_prob = old_prob * Variable((~label_map).float())
+            off_targets.append(off_prob.sum(1))
 
             log_prob = F.log_softmax(logit)
             entropy = -(log_prob * prob).sum(1)
@@ -68,14 +73,8 @@ def train(rank, args, shared_model, optimizer=None):
             action = prob.multinomial().data
             log_prob = log_prob.gather(1, Variable(action))
 
-            state, reward, done, _ = env.step(action.numpy())
+            state, reward, done, _ = env.step(action.numpy().flat[0])
             done = done or episode_length >= args.max_episode_length
-
-            if type(reward) is np.ndarray:
-                print(reward)
-                reward = reward.flat[0]
-
-            reward -= 0.5
 
             if done:
                 print("Finished")
@@ -112,11 +111,14 @@ def train(rank, args, shared_model, optimizer=None):
             gae = gae * args.gamma * args.tau + delta_t
 
             policy_loss = policy_loss - \
-                log_probs[i] * Variable(gae) - args.entropy_coef * entropies[i]
+                log_probs[i] * Variable(gae) - args.entropy_coef * entropies[i] + \
+                10 * off_targets[i]
 
         optimizer.zero_grad()
         loss = policy_loss + args.value_loss_coef * value_loss
         print(loss.data[0])
+        print(env.compute_stats(0))
+        print(R)
 
         (loss).backward()
         torch.nn.utils.clip_grad_norm(model.parameters(), args.max_grad_norm)

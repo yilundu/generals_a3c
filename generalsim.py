@@ -27,13 +27,18 @@ class GeneralBase(object):
     def move(self, move, player_index=None):
         start = move['start']
         end = move['end']
-        reward = 0
+        reward = 0.0
 
         if not self.is_valid_move(start, end, player_index):
-            return reward
+            return (reward - 1)
 
         start_label = self.label_map.flat[start]
         end_label = self.label_map.flat[end]
+
+        # mountains are represented by -2
+        if end_label == -2:
+            return (reward - 1)
+
         index = start_label - 1
 
         if (index) in self.log_players:
@@ -62,11 +67,11 @@ class GeneralBase(object):
         else:
             if end_army_value >= attack_force:
                 self.army_map.flat[end] -= attack_force
-                if end_label > 0:
-                    reward += end_army_value
             else:
                 self.label_map.flat[end] = start_label
                 self.army_map.flat[end] = attack_force - end_army_value
+
+                reward += 1.0
                 if end in self.cities:
                     self.cities = self.cities[self.cities != end]
                     self.taken_cities = np.insert(self.taken_cities,
@@ -83,9 +88,10 @@ class GeneralBase(object):
                     self.taken_cities = np.insert(self.taken_cities,
                                                   len(self.taken_cities),
                                                   end).astype('int')
+                    reward += 20.0
 
-                if end_label > 0:
-                    reward += end_army_value + 1
+                if end in self.taken_cities:
+                    reward += 4.0
         return reward
 
     def is_valid_move(self, start, end, player_index):
@@ -200,7 +206,7 @@ class GeneralBase(object):
 
         num_troops = self.army_map[label_mask].sum()
         enem_num_troops = self.army_map[enemy_global_mask].sum()
-        export_state[10] = min(num_troops / 1. / enem_num_troops, 10.) / 10.
+        export_state[10] = min(num_troops / 1. / max(enem_num_troops, 1), 10.) / 10.
 
         return export_state
 

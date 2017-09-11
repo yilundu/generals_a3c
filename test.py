@@ -71,4 +71,6 @@ def test(rank, args, shared_model):
             model.init_hidden(env.map_height, env.map_width)
             time.sleep(60)
 
+            torch.save(model.cpu().state_dict(), 'reinforce_trained.mdl')
+
         state = torch.Tensor(state)
