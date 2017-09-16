@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     model = ActorCritic.ActorCritic()
     model.load_state_dict(torch.load(args.model_path))
-    model = model.eval()
+    # model = model.eval()
     init_state = False
 
     # private game

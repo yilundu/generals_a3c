@@ -4,10 +4,10 @@ from torch.autograd import Variable
 import CNNLSTMPolicy
 import numpy as np
 
-# Environment settings
+##### Environment settings
 MAP_MIN = 17
 MAP_MAX = 23
-MOUNTAIN_RATIO = 0.25
+MOUNTAIN_RATIO = 0.20
 CITY_NUM = 9
 CITY_MIN = 40
 CITY_MAX = 50
@@ -18,7 +18,6 @@ CITY = -1
 class GeneralEnvironment(GeneralBase):
     """Class for simulating generals.io game against a policy bot
        Currently only 1 v 1 is supported"""
-
     def __init__(self, model_path):
         super(GeneralEnvironment, self).__init__()
 
@@ -60,13 +59,14 @@ class GeneralEnvironment(GeneralBase):
                         x2, y2 = x_new, y_new
                         max_prob = pred_end[0][y_new][x_new] + start_prob
 
-                    if pred_end[1][y_new][x_new] + start_prob > max_prob:
+                    if pred_end[1][y_new][x_new]+ start_prob > max_prob:
                         move_half = True
                         x1, y1 = x, y
                         x2, y2 = x_new, y_new
                         max_prob = pred_end[1][y_new][x_new] + start_prob
 
         return x1, y1, x2, y2, move_half
+
 
     def init_board(self):
         """Initializes a random baord"""
@@ -116,8 +116,9 @@ class GeneralEnvironment(GeneralBase):
     def model_move(self):
         state = self.export_state(1)
         state = state[np.newaxis, ...]
-        pred_start, pred_end = self.model.forward(
-            Variable(torch.Tensor(state)))
+        pred_start, pred_end = self.model.forward(Variable(torch.from_numpy(state)).float())
+        self.model.reset_hidden()
+
         pred_start, pred_end = pred_start.data.numpy(), pred_end.data.numpy()
         pred_start = pred_start.reshape((1, self.map_height, self.map_width))
         pred_end = pred_end.reshape((2, self.map_height, self.map_width))
@@ -158,8 +159,7 @@ class GeneralEnvironment(GeneralBase):
         return self.export_state(0)
 
     def _parse_action(self, action):
-        move_type, y, x = np.unravel_index(
-            action, (8, self.map_height, self.map_width))
+        move_type, y, x = np.unravel_index(action, (8, self.map_height, self.map_width))
         start = y * self.map_width + x
         index = move_type % 4
 
@@ -179,15 +179,14 @@ class GeneralEnvironment(GeneralBase):
         return {'start': start, 'end': end, 'is50': is_50}
 
 
+
 if __name__ == "__main__":
-    general_env = GeneralEnvironment("policy.mdl")
+    general_env = GeneralEnvironment("2_epoch.mdl")
     for i in range(20):
-        _, reward, _, _ = general_env.step(
-            {'start': 0, 'end': 1, 'is50': False})
+        _, reward, _, _ = general_env.step({'start': 0, 'end': 1, 'is50': False})
         print(reward)
     general_env.reset()
     for i in range(20):
-        _, reward, _, _ = general_env.step(
-            {'start': 0, 'end': 1, 'is50': False})
+        _, reward, _, _ = general_env.step({'start': 0, 'end': 1, 'is50': False})
         print(reward)
     print(general_env)
